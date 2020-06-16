@@ -131,22 +131,31 @@ const products = [
     category: "Electronics",
     price: "199.99",
     qty: 23,
-    name: "Nexu 7",
+    name: "Nexus 7",
   },
 ];
 
 localStorage.setItem("products", JSON.stringify(products));
+
+function searchingFor(term) {
+  return function (x) {
+    return x.name.toLowerCase().includes(term.toLowerCase()) || !term;
+  };
+}
 
 class App extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
       products: JSON.parse(localStorage.getItem("products")),
+      term: "",
     };
     this.handleDelete = this.handleDelete.bind(this);
     this.handleAdd = this.handleAdd.bind(this);
+    this.handleEditSubmit = this.handleEditSubmit.bind(this);
+    this.handleSearch = this.handleSearch.bind(this);
   }
-  componentWillMount() {
+  componentDidMount() {
     const products = this.getProducts();
   }
   getProducts() {
@@ -172,27 +181,51 @@ class App extends React.Component {
     });
     this.setState({ products: filteredProducts });
   }
+  handleEditSubmit(id, category, price, qty, name, originalName) {
+    let products = this.getProducts();
+    products = products.map((product) => {
+      if (product.name === originalName) {
+        product.id = id;
+        product.category = category;
+        product.price = price;
+        product.qty = qty;
+        product.name = name;
+      }
+      return product;
+    });
+    this.setState({ products });
+  }
+  handleSearch(event) {
+    this.setState({ term: event.target.value });
+  }
   render() {
     return (
       <div>
         <h1>Product App</h1>
-        <AddProduct handleAdd={this.handleAdd} />
-        {this.state.products.map((product) => {
-          return (
-            // <div key={product.name}>
-            <tr>
-              <th colSpan="5">
-                <Products
-                  key={product.name}
-                  {...product}
-                  handleDelete={this.handleDelete}
-                />
-              </th>
-            </tr>
+        <input
+          type="search"
+          placeholder="Search"
+          onChange={this.handleSearch}
+        />
 
-            // </div>
-          );
-        })}
+        <hr />
+        <AddProduct handleAdd={this.handleAdd} />
+        {this.state.products
+          .filter(searchingFor(this.state.term))
+          .map((product) => {
+            return (
+              // <div key={product.name}>
+
+              <Products
+                key={product.name}
+                {...product}
+                handleDelete={this.handleDelete}
+                handleEditSubmit={this.handleEditSubmit}
+              />
+
+              // </div>
+            );
+          })}
       </div>
     );
   }
